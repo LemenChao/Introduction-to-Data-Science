@@ -1,6 +1,6 @@
 # Introduction-to-Data-Science（数据科学导论）
 
--   本repository为中国人民大学朝乐门老师开源课程——《数据科学导论》
+-   本Repository为中国人民大学朝乐门老师开源课程——《数据科学导论》
 
 -   特别声明:
 
