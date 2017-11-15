@@ -1,0 +1,257 @@
+---
+title: "6.5 SparkR"
+author: "Chao Lemen"
+date: "2017-8-01"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+
+#简介
+```{r}
+# 本案例由朝乐门设计与编写,是朝乐门《数据科学理论与实践》（清华大学出版社，2017）的案例。
+# 知识点的详细注解人为朝乐门，转载请注明出处。
+# 数据文件为一个52536行*16列的csv文件，文件内容涉及航班起降时间、航行时间、延误时间、起降机场及飞行器信息。
+# 文件名为flights.csv, 下载链接: http://pan.baidu.com/s/1miG4oYG 密码: bf7b （仅供学习使用），下载后建议放在examples/src/main/resources之中。
+# 所包含的字段有：year、month、day、dep_time、dep_delay、arr_time、arr_delay、carrier、tailnum、flight origin、dest、air_time、distance、hour、minute。
+# 本例设计的目标定位是帮助入门者掌握SparkR编程知识。
+```
+
+
+#1.加载SparkR包
+```{r}
+Sys.setlocale(locale="C")
+
+#【知识点1】调用R函数library()，加载SparkR包。
+library(SparkR)
+
+```
+
+#2.创建SparkR会话
+```{r}
+#【知识点2】用sparkR函数sparkR.session()，创建sparkR session
+sparkR.session(appName = "SparkR Capstone项目")
+
+```
+
+#3.计算文件路径
+```{r}
+#【知识点3】用R函数file.path()，基于环境变量计算出文件flights.csv文件的路径.其中,R函数Sys.getenv()的功能为读取环境变量。
+path <- file.path(Sys.getenv("SPARK_HOME"), "examples/src/main/resources/flights.csv")
+
+#【知识点4】输出R变量path的值
+path
+
+```
+
+
+#4.读入文件flights.csv至本地数据框
+```{r}
+#【知识点5】用R函数read.csv(), 将目标文件以csv格式读入到R数据框r_df_flights。
+#R的函数read.csv(),在硬盘csv文件的基础上，创建R本地数据框.【注意】函数read.csv()与函数read.df()不同，前者是R自带的utilis包中，后者在sparkR包中。
+r_df_flights <- read.csv(path)
+
+#【知识点6】用R函数head（），显示R数据框r_df_flights的前3行。
+head(r_df_flights,3)
+```
+
+
+#5.将本地数据框存入Spark 数据框
+```{r}
+#【知识点7】用sparkR函数printSchema（），显示数据框spark_df_flights的模式信息。
+spark_df_flights <- createDataFrame(r_df_flights)
+
+```
+#6.显示Spark数据框的模式信息
+```{r}
+#【知识点8】用sparkR函数printSchema（），显示数据框spark_df_flights的模式信息
+printSchema(spark_df_flights)
+
+```
+
+#7.缓存Spark数据框
+
+```{r}
+#【知识点9】用sparkR函数cache()，缓存sparkR数据框，spark对应的存储级别为MEMORY_ONLY
+#cache(spark_df_flights)
+
+```
+
+
+#8.显示Spark数据框的内容
+
+```{r}
+#【知识点10】用sparkR函数showDF(),显示sparkR数据框的（部分）内容。sparkR中的showDF()的功能类似于R的head()，但也有细节上的不同
+showDF(spark_df_flights, numRows = 3) 
+
+```
+
+#9.显示Spark数据框的列名
+```{r}
+#【知识点11】用sparkR函数columns(),显示sparkR数据框的列名
+columns(spark_df_flights)
+
+```
+
+
+#10.统计Spark数据框的行数
+
+```{r}
+#【知识点12】用sparkR函数count()，统计sparkR数据框的行数
+cc<-count(spark_df_flights)
+
+cc
+```
+
+#11.选择Spark数据框的特定列
+```{r}
+#【知识点13】用sparkR函数select()，选取sparkR数据框的特定列
+spark_df_flights_selected <- select(spark_df_flights,"tailnum", "flight","dest", "arr_delay","dep_delay")
+
+#用sparkR函数showDF()，显示sparkR数据框的（部分）内容
+showDF(spark_df_flights_selected,3)
+
+```
+
+
+#12.注册Spark数据框为临时视图
+```{r}
+#【知识点14】用sparkR函数createOrReplaceTempView()，将SparkR的数据框（spark_df_flights_selected）注册成Spark临时视图（fligths_view），以便执行Spark sql语句
+createOrReplaceTempView(spark_df_flights_selected, "flights_view")
+
+```
+
+#13.编写并执行SQL语句
+```{r}
+#【知识点15】用sparkR函数sql（），编写并执行特定的sql语句。注意：SparkR中的SQL是在临时视图上执行的。
+spark_destDF <- sql("SELECT dest, arr_delay FROM flights_view")
+
+#用sparkR函数showDF(),显示sparkR数据框的内容
+showDF(spark_destDF,3)
+
+```
+
+
+#14.将Spark SQL语句的结果写入硬???
+```{r}
+#【知识点16】用sparkR函数write.df()，将sparkR数据框存储到硬盘上。
+write.df(spark_destDF,"Output_spark_destDF","csv","overwrite") 
+
+```
+
+
+#15.读取已保存的Spark SQL语句结果
+```{r}
+#【知识点17】用sparkR函数read.df(),将硬盘中已保存的sparkR数据框读入内存之中。
+dfnew<-read.df("Output_spark_destDF",source="csv") 
+
+#用sparkR函数showDF(),显示sparkR数据框的内容
+showDF(dfnew,3) 
+
+```
+
+
+#16.过滤SparkR数据框的行
+```{r}
+#【知识点18】用sparkR函数filter()，对sparkR数据框进行按行过滤。
+jfkDF <- filter(spark_df_flights, spark_df_flights$dest == "JFK")
+
+#用sparkR函数showDF(),显示sparkR数据框的内容
+showDF(jfkDF,3)
+
+```
+
+#17.安装R包“magrittr”
+```{r}
+#【知识点19】1）运算符“%>%”是R编程中常用的运算符，通常称之为“管道运算符”，但在R默认安装的基础包中并没有给出此运算符，需要导入R包"magrittr"。2）管道运算符避避免了函数的嵌套调用式表达，可以提升R代码的易懂性。3）此处if判断的含义：先用R函数installed.packages()查看已安装包的列表。如果R包"magrittr"出现在"已安装包列表之中，则不再下载和加载此包。
+
+# if("magrittr" %in% rownames(installed.packages())== FALSE) {
+# #设置CRAN镜像站点
+  local({r <- getOption("repos")
+           r["CRAN"] <- "http://mirrors.tuna.tsinghua.edu.cn/CRAN/"
+           options(repos=r)})
+# install.packages("magrittr")
+library(magrittr)
+# }
+
+```
+
+
+
+#18.分组统计Spark数据框
+```{r}
+#【知识点20】1）管道运算符“%>%”的功能是将运算符左侧的表达式值传给右侧函数的第一个参数。2）函数groupBY、avg和summarize均为SparkR函数，分别用于分组统计、均值计算和按列进行聚合计算。3）运算符“->”是赋值运算符的一种，将左侧表达式值赋值给右侧变量。
+
+groupBy(spark_df_flights, spark_df_flights$day) %>%
+    summarize(avg(spark_df_flights$dep_delay), avg(spark_df_flights$arr_delay)) -> dailyDelayDF
+
+#用sparkR函数showDF(),显示sparkR数据框的内容。从显示结果可以看出，计算结果为“所有航班的每日平均延误起飞时间和每日平均延误降落。
+showDF(dailyDelayDF)
+
+#查看sparkR数据框的模式信息
+printSchema(dailyDelayDF)
+```
+#19.命名SparkR的数据框
+```{r}
+#【知识点21】用SparkR函数colnames()，给数据框的列命名。
+#注意：函数colnames（）的名称从Spark1.6开始不再为columns （）或names（）
+colnames(dailyDelayDF)<- c("day","avg_dep_delay", "avg_arr_delay") 
+
+#查看SparkR数据框的模式信息
+printSchema(dailyDelayDF)
+
+```
+
+#20.将SparkR数据框转换为R本地数据框
+```{r}
+#【知识点22】用sparkR函数collect()，将sparkR数据框转换为R本地数据框
+local_dailyDelayDF <- collect(dailyDelayDF)
+
+#用R函数head()，显示R本地数据框的内容
+head(local_dailyDelayDF,6)
+
+```
+
+#21.结果的可视化
+```{r}
+#23 【知识点23】用R的plot()函数进行数据可视化
+  # install.packages("ggplot2")
+  library("ggplot2")
+myggplot <-ggplot(data=local_dailyDelayDF)+
+  geom_point(position="jitter", aes(x=day,y=avg_dep_delay),color="blue",alpha=0.5)
+
+
+myggplot
+
+# plot(local_dailyDelayDF$day, local_dailyDelayDF$avg_dep_delay,type="o",xlab="（日）", ylab="起飞延误时间")
+
+# 
+# plot(local_dailyDelayDF$day, local_dailyDelayDF$avg_arr_delay,type="o",xlab="（日）", ylab="到达延误时间")
+```
+
+#21.结果的可视化
+```{r}
+#23 【知识点23】用R的plot()函数进行数据可视化
+  # install.packages("ggplot2")
+  library("ggplot2")
+myggplot <-ggplot(data=local_dailyDelayDF)+
+   geom_point(position="jitter", aes(x=day,y=avg_arr_delay),color="red",alpha=0.5)+
+   xlab = "（日）"
+
+myggplot
+
+plot(local_dailyDelayDF$day, local_dailyDelayDF$avg_dep_delay,xlab="（日）", ylab="起飞延误时间")
+# 
+plot(local_dailyDelayDF$day, local_dailyDelayDF$avg_arr_delay,xlab="（日）", ylab="到达延误时间")
+
+```
+
+#22.关闭SparkR会话
+```{r}
+#【知识点24】用sparkR函数sparkR.session.stop()，停止当前sparkR session。
+sparkR.session.stop()
+```
+
+

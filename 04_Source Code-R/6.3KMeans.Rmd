@@ -1,0 +1,104 @@
+---
+title: "6.3 机器学习KMeans"
+author: "朝乐门"
+date: "2017年10月28日"
+output: html_document
+---
+```{r}
+# 本案例由朝乐门设计与编写,是朝乐门《数据科学理论与实践》（清华大学出版社，2017）的案例。
+# 知识点的详细注解人为朝乐门，转载请注明出处。
+```
+
+#6.3 机器学习【例2】K-Means算法
+##（1）数据读入
+```{r}
+#前提：数据已存放在R当前工作目录下。查看当前工作目录的函数为getwd(),详见知识点【当前工作目录】
+bcd <- read.csv("bc_data.csv", stringsAsFactors = FALSE)
+head(bcd,3)
+```
+
+##（2）数据理解
+```{r}
+str(bcd)
+```
+
+```{r}
+summary(bcd)
+
+```
+
+```{r}
+
+#在列diagnosis上进行频数统计
+table(bcd$diagnosis)
+```
+
+##（3）数据准备
+```{r}
+#将列diagnosis改为因子型，并将B和M 改为Benign和Malignant
+bcd$diagnosis <- factor(bcd$diagnosis,levels=c("B","M"),labels=c("Benign","Malignant"))
+# 查看bcd数据框，列diagnosis的值是否有改动
+head(bcd,3)
+
+
+```
+
+```{r}
+
+# 定义一个标准化函数
+normalize<- function(x){
+  return((x-min(x))/(max(x)-min(x)))
+}
+
+
+```
+
+```{r}
+# 为了进行数据内容的标准化，删除第一列
+bcd<-bcd[-1]
+
+#对数据内容进行标准化处理
+normalized.bcd<-as.data.frame(lapply(bcd[2:31],normalize))
+
+#【注意】此处，bcd[2:31]的原因是bcd的前1列不在标准化处理的范围之内。我们可以用str()函数查看结构信息
+str(bcd)
+head(normalized.bcd,3)
+
+
+```
+
+```{r}
+#生成训练集和测试集
+training.bcd<-normalized.bcd[1:469,]
+testing.bcd<- normalized.bcd[470:569,]
+
+#定义训练集和测试集的标签向量
+training.bcd.labels<-bcd[1:469,1]
+testing.bcd.labels <-bcd[470:569,1]
+```
+
+##（4）数据建模
+```{r}
+install.packages("class")
+library(class)
+if("class" %in% rownames(installed.packages())==FALSE) {
+#设置CRAN镜像站点
+  local({r <- getOption("repos")  
+           r["CRAN"] <- "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"  
+           options(repos=r)}) 
+install.packages("class")
+library(class)
+}
+
+testing.bcd.pred <- knn(train=training.bcd, test=testing.bcd, cl= training.bcd.labels,k=21)
+head(testing.bcd.pred,3)
+```
+
+## （5）讨论模型的可靠性
+```{r}
+install.packages("gmodels")
+library("gmodels")
+
+CrossTable(x=testing.bcd.labels,y=testing.bcd.pred,prop.chisq=FALSE)
+
+```

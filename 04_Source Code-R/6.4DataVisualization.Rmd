@@ -1,0 +1,51 @@
+---
+title: "6.4 可视化"
+author: "朝乐门"
+date: "2017年10月28日"
+output: html_document
+---
+```{r}
+# 本案例由朝乐门设计与编写,是朝乐门《数据科学理论与实践》（清华大学出版社，2017）的案例。
+# 知识点的详细注解人为朝乐门，转载请注明出处。
+```
+#6.4 数据可视化
+##（1）数据准备
+```{r}
+#本例准备用car包下的Salaries数据集
+install.packages("car")
+data(Salaries,package="car")
+if("car" %in% rownames(installed.packages())==FALSE) {
+#设置CRAN镜像站点
+  local({r <- getOption("repos")  
+           r["CRAN"] <- "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"  
+           options(repos=r)}) 
+install.packages("car")
+data(Salaries,package="car")
+  }
+```
+
+
+##（2）加载ggplot2包
+```{r}
+# if("ggplot2" %in% rownames(installed.packages())=FALSE) {
+# #设置CRAN镜像站点
+#   local({r <- getOption("repos")  
+#            r["CRAN"] <- "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"  
+#            options(repos=r)}) 
+  install.packages("ggplot2")
+  library("ggplot2")
+# }
+```
+
+##（3） 可视化建模
+```{r}
+myggplot <-ggplot(data=Salaries, aes(x=rank,y=salary))+
+  geom_boxplot(fill="cornflowerblue", color="red", notch=TRUE)+
+  geom_point(position="jitter", color="blue",alpha=0.5)+
+  geom_rug(sides = "1", color="black")
+
+```
+##（4）进行可视化
+```{r}
+myggplot
+```

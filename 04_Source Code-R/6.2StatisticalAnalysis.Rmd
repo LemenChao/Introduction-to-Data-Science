@@ -1,0 +1,70 @@
+---
+title: "6.2 统计分析"
+author: "朝乐门"
+date: "2017年10月28日"
+output: html_document
+---
+```{r}
+# 本案例由朝乐门设计与编写,是朝乐门《数据科学理论与实践》（清华大学出版社，2017）的案例。
+# 知识点的详细注解人为朝乐门，转载请注明出处。
+```
+
+```{r}
+Sys.setlocale(locale="C")
+```
+
+
+#6.2 统计分析
+##（1）理解数据
+```{r}
+#查看准备分析的数据集
+women
+
+```
+
+##（2） 数据建模
+```{r}
+#用函数lm（）进行线性回归
+myLR<-lm(weight~height,data=women)
+
+myLR
+#【注】
+    #1）显示结果中的Coefficients为系数，Interepret为截距。
+    #2）符号“~”代表的是因变量和自变量的关系，符号“~”左侧为因变量，右侧为自变量，即 y~x相当于 f(x)
+
+```
+
+##（3） 查看模型
+```{r}
+#查看线性回归模型
+summary(myLR)
+```
+
+##（4）模型预测
+```{r}
+#查看拟合结果
+fitted(myLR)
+```
+
+```{r}
+#查看残差
+residuals(myLR)
+```
+
+##（5）分析结果的可视化
+```{r}
+plot(women$height,women$weight,xlab="身高",ylab="体重", col="red",main="女性体重与身高的线性回归分析")
+abline(myLR)
+```
+
+##（6）生成报告
+```{r}
+pdf("Results.pdf",family="GB1")
+#注意参数：family="GB1"
+
+plot(women$height,women$weight,xlab="身高",ylab="体重", col="red",main="女性体重与身高的线性回归分析")
+
+abline(myLR)
+
+dev.off()
+```

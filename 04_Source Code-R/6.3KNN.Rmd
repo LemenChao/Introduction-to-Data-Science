@@ -1,0 +1,95 @@
+---
+title: "6.3 KNN"
+author: "朝乐门"
+date: "2017年10月28日"
+output: html_document
+---
+```{r}
+# 本案例由朝乐门设计与编写,是朝乐门《数据科学理论与实践》（清华大学出版社，2017）的案例。
+# 知识点的详细注解人为朝乐门，转载请注明出处。
+```
+```{r}
+Sys.setlocale(locale="C")
+```
+
+#6.3 机器学习 【例1】KNN算法
+##（1）数据导入
+```{r}
+#前提：将数据文件protein.txt事先放在当前工作路径下。查看当前工作目录的函数为getwd(),详见知识点【当前工作目录】
+protein<-read.table("protein.txt",sep="\t",header=TRUE)
+head(protein)
+```
+##（2）数据理解
+```{r}
+#查看结构信息
+str(protein)
+
+```
+```{r}
+#查看描述性统计信息
+summary(protein)
+```
+
+```{r}
+#查看列名
+colnames(protein)
+
+```
+```{r}
+
+#查看行数和列数
+ncol(protein)
+
+```
+
+```{r}
+nrow(protein)
+```
+
+##（3）数据转换
+```{r}
+
+#对数据部分进行标准化处理
+sprotein<-scale(protein[,-1])
+head(sprotein)
+
+```
+
+##（4）数据建模
+```{r}
+#以kmean聚类为例
+k<-5
+KMmodel<- kmeans(sprotein,k,nstart = 10,iter.max=10)
+```
+##（5） 查看模型
+```{r}
+KMmodel
+summary(KMmodel)
+
+```
+
+##（6）模型预测
+```{r}
+prepfrotein<-fitted(KMmodel)
+head(prepfrotein)
+
+```
+```{r}
+#查看聚类结果【注】k=5，共25个国家
+KMClusters<-KMmodel$cluster
+KMClusters
+```
+
+##（7） 输出结果
+```{r}
+print_KMClusters <- function(labels,k)
+{
+  for(i in 1:k){
+    print(paste("聚类",i))
+    print(protein[labels==i, c("Country","RedMeat","Fish","Fr.Veg")])
+  }
+}
+
+k=5
+print_KMClusters(KMClusters,k)
+```
